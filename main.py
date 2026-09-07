@@ -1,33 +1,31 @@
-from pynput import keyboard
+import sqlite3
 
+
+from pynput import keyboard
+from collections import deque
+from datetime import datetime
+from datetime import timezone
+
+import connection
 
 pressed_vks = set()
-
-def get_vk(key):
-    """Retrieves a stable virtual-key code regardless of the object type and modifiers"""
-    if isinstance(key, keyboard.KeyCode):
-        return key.vk
-    if isinstance(key, keyboard.Key):
-        return key.value.vk
-    return None
-
-def on_press(key):
-    vk = get_vk(key)
-
-    print(f"[PRESS] {vk}")
-
-def on_release(key):
-    vk = get_vk(key)
-
-    print(f"[RELEASE] {vk}")
+key_buffer = deque()
+conn: sqlite3.Connection
+session_id: int
 
 
-listener = keyboard.Listener(
-    on_press=on_press,
-    on_release=on_release
-)
+def main():
+    global conn
+    conn = connection.get_connection("app.db")
 
-listener.start()
+    global session_id
+    session_id = connection.get_session()
 
-while True:
-    pass
+    listener = keyboard.Listener(
+        on_press=on_press,
+        on_release=on_release
+    )
+
+    listener.start()
+    listener.join()
+
