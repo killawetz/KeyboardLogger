@@ -1,7 +1,9 @@
+import logging
 from queue import Queue
 from pynput import keyboard
 from datetime import datetime, timezone
 
+logger = logging.getLogger(__name__)
 
 class KeyListener:
     def __init__(self, events_buffer: Queue):
@@ -23,21 +25,27 @@ class KeyListener:
         return str(key)
 
     def on_press(self, key):
-        key_name = self.canonical_key_name(key)
-        if key_name in self._pressed_vks:
-            return
-        self._pressed_vks.add(key_name)
-        self._events_buffer.put((
-            key_name,
-            datetime.now(tz=timezone.utc).timestamp(),  # (3) float вместо объекта
-            "press"
-        ))
+        try:
+            key_name = self.canonical_key_name(key)
+            if key_name in self._pressed_vks:
+                return
+            self._pressed_vks.add(key_name)
+            self._events_buffer.put((
+                key_name,
+                datetime.now(tz=timezone.utc).timestamp(),
+                "press"
+            ))
+        except Exception:
+            logger.exception("Unhandled exception in on_press")
 
     def on_release(self, key):
-        key_name = self.canonical_key_name(key)
-        self._pressed_vks.discard(key_name)
-        self._events_buffer.put((
-            key_name,
-            datetime.now(tz=timezone.utc).timestamp(),  # (3)
-            "release"
-        ))
+        try:
+            key_name = self.canonical_key_name(key)
+            self._pressed_vks.discard(key_name)
+            self._events_buffer.put((
+                key_name,
+                datetime.now(tz=timezone.utc).timestamp(),
+                "release"
+            ))
+        except Exception:
+            logger.exception("Unhandled exception in on_release")

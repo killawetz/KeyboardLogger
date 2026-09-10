@@ -223,3 +223,5 @@ app.db-shm
 app.db-wal
 keylogger.log
 .idea
+start.bat
+sqlite3.exe

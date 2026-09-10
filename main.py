@@ -17,12 +17,12 @@ logger = logging.getLogger(__name__)
 
 
 def acquire_mutex():
-    """Гарантирует что запущен только один экземпляр программы."""
+    """Ensures that only one instance of the program is running."""
     mutex = win32event.CreateMutex(None, False, "KeyboardLoggerMutex")
     if win32api.GetLastError() == winerror.ERROR_ALREADY_EXISTS:
         logger.warning("Another instance is already running, exiting.")
         sys.exit(0)
-    return mutex  # возвращаем, чтобы объект не был уничтожен сборщиком мусора
+    return mutex  # We return it so that the object isn't destroyed by the garbage collector
 
 
 def start_session(db_path: str):
@@ -86,7 +86,7 @@ def main():
         ]
     )
 
-    mutex = acquire_mutex()  # переменная должна жить до конца программы
+    mutex = acquire_mutex()  # The variable must remain in memory until the end of the program
 
     db_path = "app.db"
     start_session(db_path)
