@@ -4,8 +4,6 @@ import time
 import sqlite3
 from queue import Queue
 
-import connection
-
 
 class KeyWriter:
     _BATCH_SIZE = 100
@@ -13,7 +11,7 @@ class KeyWriter:
 
     def __init__(self, events_buffer: Queue, db_path: str, session_id: int):
         self._events_buffer = events_buffer
-        self._conn = connection.get_connection(db_path)  # (1) путь вместо conn
+        self._db_path = db_path  # (1) путь вместо conn
         self._session_id = session_id
         self._stop_event = threading.Event()
         self._flushing_thread = threading.Thread(
@@ -23,6 +21,7 @@ class KeyWriter:
         )
 
     def _flush_loop(self):
+        conn = sqlite3.connect(self._db_path)
         pack = []
         last_flush = time.monotonic()
 
@@ -50,18 +49,18 @@ class KeyWriter:
 
         finally:
             if pack:                       # (2) финальный сброс всегда выполнится
-                self._flush(pack)
-            self._conn.close()
+                self._flush(conn, pack)
+            conn.close()
 
-    def _flush(self, pack: list):
-        self._conn.executemany(
+    def _flush(self, conn: sqlite3.Connection, pack: list):
+        conn.executemany(
             """
             INSERT INTO key_events (key_name, event_time, event_type, session_id)
             VALUES (?, ?, ?, ?)
             """,
             pack
         )
-        self._conn.commit()
+        conn.commit()
 
     def start(self):
         self._flushing_thread.start()
