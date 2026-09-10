@@ -216,3 +216,10 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# Custom
+app.db
+app.db-shm
+app.db-wal
+keylogger.log
+.idea

@@ -8,7 +8,6 @@ CURRENT_SCHEMA_VERSION = 1
 def get_connection(db_path: str = "app.db") -> sqlite3.Connection:
     logger.info("opening sqlite connection: %s", db_path)
     conn = sqlite3.connect(db_path)
-    apply_schema(conn)
     conn.execute("PRAGMA journal_mode=WAL;")
     conn.execute("PRAGMA foreign_keys = ON;")
 
