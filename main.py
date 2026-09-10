@@ -12,21 +12,16 @@ from key_writer import KeyWriter
 def start_session(db_path: str):
     conn = connection.get_connection(db_path)
 
-    session_id: int = conn.execute(
-        """
-        SELECT COALESCE(MAX(id), 0) + 1
-        FROM sessions;
-        """
-    ).fetchone()[0]
     started_at = datetime.timestamp(datetime.now(tz=timezone.utc))
     hostname = socket.gethostname()
-
-    conn.execute(
+    cursor = conn.execute(
         """
-        INSERT INTO sessions (id, started_at, hostname) VALUES (?, ?, ?)
+        INSERT INTO sessions (started_at, hostname)
+        VALUES (?, ?)
         """,
-        (session_id, started_at, hostname)
+    (started_at, hostname)
     )
+    session_id = cursor.lastrowid
     conn.commit()
     conn.close()
 
@@ -41,22 +36,25 @@ def start_session(db_path: str):
 
     key_writer.start()
     listener.start()
-    listener.join()
-    key_writer.stop()
-
-
-    conn = connection.get_connection(db_path)
-    ended_at = datetime.timestamp(datetime.now(tz=timezone.utc))
-    conn.execute(
-        """
-        UPDATE sessions
-        SET ended_at = ?
-        WHERE id = ?
-        """,
-        (ended_at, session_id)
-    )
-    conn.commit()
-    conn.close()
+    try:
+        listener.join()
+    except KeyboardInterrupt:
+        pass
+    finally:
+        listener.stop()
+        key_writer.stop()
+        conn = connection.get_connection(db_path)
+        ended_at = datetime.timestamp(datetime.now(tz=timezone.utc))
+        conn.execute(
+            """
+            UPDATE sessions
+            SET ended_at = ?
+            WHERE id = ?
+            """,
+            (ended_at, session_id)
+        )
+        conn.commit()
+        conn.close()
 
 
 

@@ -15,4 +15,4 @@ CREATE TABLE IF NOT EXISTS key_events (
 );
 
 CREATE INDEX IF NOT EXISTS idx_key_events_session ON key_events(session_id);
-CREATE INDEX IF NOT EXISTS idx_key_events_timestamp ON key_events(timestamp);
+CREATE INDEX IF NOT EXISTS idx_key_events_timestamp ON key_events(event_time);
