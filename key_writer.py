@@ -1,8 +1,11 @@
+import logging
 import queue
 import threading
 import time
 import sqlite3
 from queue import Queue
+
+logger = logging.getLogger(__name__)
 
 
 class KeyWriter:
@@ -22,6 +25,7 @@ class KeyWriter:
 
     def _flush_loop(self):
         conn = sqlite3.connect(self._db_path)
+        logger.info("Flushing thread started")
         pack = []
         last_flush = time.monotonic()
 
@@ -35,7 +39,7 @@ class KeyWriter:
 
                 elapsed = time.monotonic() - last_flush
                 if len(pack) >= self._BATCH_SIZE or (pack and elapsed >= self._FLUSH_INTERVAL):  # (4)
-                    self._flush(pack)
+                    self._flush(conn, pack)
                     pack.clear()
                     last_flush = time.monotonic()
 
@@ -61,6 +65,7 @@ class KeyWriter:
             pack
         )
         conn.commit()
+        logger.debug("Flushed %s events to DB", len(pack))  # debug, не info — это частое событие
 
     def start(self):
         self._flushing_thread.start()
